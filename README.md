@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Multiplayer Rock Paper Scissors Game
 
 A real-time multiplayer Rock Paper Scissors game built with Socket.IO and Express.
@@ -107,3 +108,7 @@ To run the game locally:
 1. Install dependencies: `npm install`
 2. Start the server: `npm start` or `npm run dev` (for development)
 3. Open your browser to `http://localhost:3000`
+=======
+# rock-paper-scissors
+taş, makası; makas, kağıdı; kağıt, taşı yeniyor. 
+>>>>>>> eb6e38bce5ca353b2954900ec97718c7af1a2229
