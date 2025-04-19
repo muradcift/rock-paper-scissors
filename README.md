@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Multiplayer Rock Paper Scissors Game
 
 A real-time multiplayer Rock Paper Scissors game built with Socket.IO and Express.
