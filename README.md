@@ -21,9 +21,8 @@ A real-time multiplayer Rock Paper Scissors game built with Socket.IO and Expres
 
 1. Clone the repository:
    ```
-   git clone https://github.com/YOUR-USERNAME/rock-paper-scissors.git
+   git clone https://github.com/muradcift/rock-paper-scissors.git
    cd rock-paper-scissors
-   cd "d:\Muhammed Murad\Programlama\js dersleri\ROCK PAPER SCISSORS"
    ```
 
 2. Install dependencies:
