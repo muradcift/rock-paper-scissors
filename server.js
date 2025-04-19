@@ -23,7 +23,9 @@ io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
   
   // Handle joining room
-  socket.on('joinRoom', (roomId) => {
+  socket.on('joinRoom', (data) => {
+    const { roomId, username } = data;
+    
     // Join the socket.io room
     socket.join(roomId);
     
@@ -39,6 +41,7 @@ io.on('connection', (socket) => {
     if (!rooms[roomId].players[socket.id]) {
       rooms[roomId].players[socket.id] = {
         id: socket.id,
+        username: username || `Player ${rooms[roomId].playerCount + 1}`,
         choice: null
       };
       rooms[roomId].playerCount++;
@@ -58,7 +61,7 @@ io.on('connection', (socket) => {
       socket.emit('gameUpdate', { message: 'Room is full, spectating only.' });
     }
     
-    console.log(`Player ${socket.id} joined room ${roomId}. Players in room: ${rooms[roomId].playerCount}`);
+    console.log(`Player ${socket.id} (${username}) joined room ${roomId}. Players in room: ${rooms[roomId].playerCount}`);
   });
   
   // Handle player choice
@@ -78,13 +81,14 @@ io.on('connection', (socket) => {
     const players = Object.values(rooms[room].players);
     if (players.length === 2 && players[0].choice && players[1].choice) {
       // Both players have made choices, determine the winner
-      const result = determineWinner(players[0].choice, players[1].choice);
+      const result = determineWinner(players[0], players[1]);
       
       // Send the result to all players in the room
       io.to(room).emit('gameResult', { 
-        message: result,
-        player1: { id: players[0].id, choice: players[0].choice },
-        player2: { id: players[1].id, choice: players[1].choice }
+        message: result.message,
+        player1: { id: players[0].id, choice: players[0].choice, username: players[0].username },
+        player2: { id: players[1].id, choice: players[1].choice, username: players[1].username },
+        winner: result.winnerId
       });
       
       // Reset choices for next round
@@ -99,32 +103,53 @@ io.on('connection', (socket) => {
     }
   });
   
+  // Handle leaving room
+  socket.on('leaveRoom', (roomId) => {
+    handlePlayerLeaving(socket, roomId);
+  });
+  
   // Handle disconnect
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
     
     // Remove player from all rooms they were in
     for (const roomId in rooms) {
-      if (rooms[roomId].players && rooms[roomId].players[socket.id]) {
-        delete rooms[roomId].players[socket.id];
-        rooms[roomId].playerCount--;
-        
-        // Notify other players in the room
-        socket.to(roomId).emit('gameUpdate', { message: 'Opponent has left the game.' });
-        
-        // Clean up empty rooms
-        if (rooms[roomId].playerCount === 0) {
-          delete rooms[roomId];
-        }
-      }
+      handlePlayerLeaving(socket, roomId);
     }
   });
 });
 
+// Helper function to handle player leaving
+function handlePlayerLeaving(socket, roomId) {
+  if (rooms[roomId] && rooms[roomId].players && rooms[roomId].players[socket.id]) {
+    const username = rooms[roomId].players[socket.id].username;
+    
+    delete rooms[roomId].players[socket.id];
+    rooms[roomId].playerCount--;
+    
+    // Notify other players in the room
+    socket.to(roomId).emit('gameUpdate', { message: `${username} has left the game.` });
+    
+    // Clean up empty rooms
+    if (rooms[roomId].playerCount === 0) {
+      delete rooms[roomId];
+    }
+    
+    // Leave the socket.io room
+    socket.leave(roomId);
+  }
+}
+
 // Function to determine the winner
-function determineWinner(choice1, choice2) {
+function determineWinner(player1, player2) {
+  const choice1 = player1.choice;
+  const choice2 = player2.choice;
+  
   if (choice1 === choice2) {
-    return "It's a tie!";
+    return {
+      message: "It's a tie!",
+      winnerId: null
+    };
   }
   
   if (
@@ -132,9 +157,15 @@ function determineWinner(choice1, choice2) {
     (choice1 === 'paper' && choice2 === 'rock') ||
     (choice1 === 'scissors' && choice2 === 'paper')
   ) {
-    return "Player 1 wins!";
+    return {
+      message: `${player1.username} wins with ${choice1} against ${choice2}!`,
+      winnerId: player1.id
+    };
   } else {
-    return "Player 2 wins!";
+    return {
+      message: `${player2.username} wins with ${choice2} against ${choice1}!`,
+      winnerId: player2.id
+    };
   }
 }
 
