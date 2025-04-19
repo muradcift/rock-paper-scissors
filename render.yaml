@@ -1,9 +1,11 @@
 services:
-  - type: web
+  - type: static_site
     name: rock-paper-scissors
-    env: static
-    buildCommand: npm install && npm run build  # Adjust if you're using a different build command
-    staticPublishPath: ./  # Adjust if your static files are in a subdirectory like "dist" or "build"
+    envVars:
+      - key: NODE_VERSION
+        value: 16
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
     routes:
       - type: rewrite
         source: /*
