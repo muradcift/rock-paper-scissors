@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online Rock Paper Scissors</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Online Rock Paper Scissors</h1>
+        
+        <!-- Login Screen -->
+        <div id="login-screen">
+            <h2>Enter Your Name to Play</h2>
+            <input type="text" id="player-name" placeholder="Your name">
+            <button id="play-button">Find Opponent</button>
+        </div>
+        
+        <!-- Waiting Screen -->
+        <div id="waiting-screen" class="hidden">
+            <h2>Waiting for opponent...</h2>
+            <div class="loader"></div>
+        </div>
+        
+        <!-- Game Screen -->
+        <div id="game-screen" class="hidden">
+            <div class="game-info">
+                <div class="player-info">
+                    <h2 id="player-display">You: <span id="player-score">0</span></h2>
+                </div>
+                <div class="round-info">
+                    <h2>Round <span id="round-number">1</span></h2>
+                </div>
+                <div class="opponent-info">
+                    <h2 id="opponent-display">Opponent: <span id="opponent-score">0</span></h2>
+                </div>
+            </div>
+            
+            <div id="choice-message">Make your choice!</div>
+            
+            <div class="choices">
+                <div class="choice" id="rock">
+                    <img src="https://cdn-icons-png.flaticon.com/512/6729/6729151.png" alt="Rock">
+                    <p>Rock</p>
+                </div>
+                <div class="choice" id="paper">
+                    <img src="https://cdn-icons-png.flaticon.com/512/5898/5898057.png" alt="Paper">
+                    <p>Paper</p>
+                </div>
+                <div class="choice" id="scissors">
+                    <img src="https://cdn-icons-png.flaticon.com/512/2928/2928853.png" alt="Scissors">
+                    <p>Scissors</p>
+                </div>
+            </div>
+            
+            <div id="result-display" class="hidden">
+                <div class="result-info">
+                    <div class="player-choice">
+                        <h3>Your choice:</h3>
+                        <img id="player-choice-img" src="" alt="">
+                    </div>
+                    <div class="result-text">
+                        <h2 id="result-message"></h2>
+                    </div>
+                    <div class="opponent-choice">
+                        <h3>Opponent's choice:</h3>
+                        <img id="opponent-choice-img" src="" alt="">
+                    </div>
+                </div>
+                <button id="next-round">Next Round</button>
+            </div>
+        </div>
+        
+        <!-- Connection Lost Screen -->
+        <div id="connection-lost" class="hidden">
+            <h2>Opponent disconnected</h2>
+            <button id="find-new-opponent">Find New Opponent</button>
+        </div>
+    </div>
+    
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
