@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: rock-paper-scissors
+    runtime: static
+    envVars:
+      - key: NODE_VERSION
+        value: 16
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

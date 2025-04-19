@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A fun Rock Paper Scissors game">
+    <title>Rock Paper Scissors | Game</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.socket.io/4.4.1/socket.io.min.js"></script>
+</head>
+<body>
+    <div class="game-container">
+        <header>
+            <h1><i class="fas fa-gamepad"></i> Rock Paper Scissors</h1>
+            <div id="connectionStatus" class="connection-status">
+                <span class="status-dot offline"></span> Offline
+            </div>
+        </header>
+
+        <!-- Game setup modal -->
+        <div id="gameSetupModal" class="modal">
+            <div class="modal-content">
+                <h2>Play Rock Paper Scissors Online</h2>
+                <div class="setup-form">
+                    <div class="form-group">
+                        <label for="username">Your Name:</label>
+                        <input type="text" id="username" placeholder="Enter your name" maxlength="15">
+                    </div>
+                    <div class="form-group">
+                        <label for="roomId">Room Code:</label>
+                        <input type="text" id="roomId" placeholder="Enter room code or leave empty">
+                        <button id="generateRoomId" class="small-button">Generate</button>
+                    </div>
+                    <div class="button-group">
+                        <button id="playOffline" class="secondary-button">Play Offline</button>
+                        <button id="joinGameBtn" class="primary-button">Play Online</button>
+                    </div>
+                </div>
+                <div id="setupMessage" class="setup-message"></div>
+            </div>
+        </div>
+
+        <!-- Waiting for opponent overlay -->
+        <div id="waitingOverlay" class="overlay hidden">
+            <div class="overlay-content">
+                <h3>Waiting for opponent</h3>
+                <div class="spinner"></div>
+                <p>Share your room code with a friend:</p>
+                <div class="room-code">
+                    <span id="roomCodeDisplay"></span>
+                    <button id="copyRoomCode" class="small-button">Copy</button>
+                </div>
+                <button id="cancelWaiting" class="secondary-button">Cancel</button>
+            </div>
+        </div>
+
+        <div class="game-area">
+            <div id="onlineInfo" class="online-info hidden">
+                <div class="player-info">
+                    <span>You: </span>
+                    <span id="playerName"></span>
+                </div>
+                <div class="room-info">
+                    <span>Room: </span>
+                    <span id="currentRoom"></span>
+                </div>
+                <div class="opponent-info">
+                    <span>Opponent: </span>
+                    <span id="opponentName"></span>
+                </div>
+            </div>
+
+            <div class="choices-container">
+                <h2 id="gamePrompt">Make your choice</h2>
+                <div class="choices">
+                    <button id="rock" onclick="handleChoice('rock')" aria-label="Rock">
+                        <span class="choice-icon">👊</span>
+                    </button>
+                    <button id="paper" onclick="handleChoice('paper')" aria-label="Paper">
+                        <span class="choice-icon">✋</span>
+                    </button>
+                    <button id="scissors" onclick="handleChoice('scissors')" aria-label="Scissors">
+                        <span class="choice-icon">✌</span>
+                    </button>
+                </div>
+                <div class="choices-labels">
+                    <span class="choice-label">Rock</span>
+                    <span class="choice-label">Paper</span>
+                    <span class="choice-label">Scissors</span>
+                </div>
+            </div>
+
+            <div class="result-area">
+                <div class="players">
+                    <div class="player-box">
+                        <div id="playerTitle" class="player-title">You chose</div>
+                        <div id="playerDisplay" class="display-choice">
+                            <span class="choice-icon">?</span>
+                        </div>
+                    </div>
+                    <div class="versus">VS</div>
+                    <div class="player-box">
+                        <div id="computerTitle" class="player-title">Computer chose</div>
+                        <div id="computerDisplay" class="display-choice">
+                            <span class="choice-icon">?</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="resultDisplay" class="result">READY TO PLAY!</div>
+            </div>
+
+            <div class="score-section">
+                <div class="score-box player">
+                    <div id="playerScoreLabel" class="score-label">Player</div>
+                    <div id="playerScoreDisplay" class="score">0</div>
+                </div>
+                <div class="score-box computer">
+                    <div id="computerScoreLabel" class="score-label">Computer</div>
+                    <div id="computerScoreDisplay" class="score">0</div>
+                </div>
+            </div>
+
+            <div class="button-container">
+                <button id="resetGame" class="reset-button">Reset Game</button>
+                <button id="changeMode" class="mode-button">Change Mode</button>
+            </div>
+        </div>
+
+        <footer>
+            <p>© 2023 Rock Paper Scissors Game</p>
+        </footer>
+    </div>
+
+    <script src="index.js"></script>
+</body>
+</html>
