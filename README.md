@@ -110,4 +110,3 @@ To run the game locally:
 =======
 # rock-paper-scissors
 taş, makası; makas, kağıdı; kağıt, taşı yeniyor. 
->>>>>>> eb6e38bce5ca353b2954900ec97718c7af1a2229
