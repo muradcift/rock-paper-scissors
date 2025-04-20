@@ -1,6 +1,12 @@
 [build]
   publish = "./"
   
+# Serve static files in public folder directly
+[[redirects]]
+  from = "/public/*"
+  to = "/public/:splat"
+  status = 200
+
 [[redirects]]
   from = "/*"
   to = "/main.html"

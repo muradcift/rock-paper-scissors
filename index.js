@@ -94,9 +94,10 @@ function handleJoinGame() {
 function connectToServer() {
     updateConnectionStatus('connecting');
     try {
-        // Use configuration from config.js for server URL
-        console.log("Connecting to server:", RPS_CONFIG.SERVER_URL);
-        socket = io(RPS_CONFIG.SERVER_URL);
+        // Determine server URL (fall back to origin if config missing)
+        const serverUrl = (window.RPS_CONFIG && RPS_CONFIG.SERVER_URL) || window.location.origin;
+        console.log("Connecting to server:", serverUrl);
+        socket = io(serverUrl);
 
         socket.on('connect', () => {
             updateConnectionStatus('online');
