@@ -6,20 +6,44 @@ const path = require('path');
 const app = express();
 const server = http.createServer(app);
 
-// Add CORS configuration
+// Enhanced CORS configuration for broader compatibility
 const io = socketIO(server, {
   cors: {
-    origin: "*", // In production, you might want to be more specific
-    methods: ["GET", "POST"]
-  }
+    origin: "*", // Allow connections from any origin
+    methods: ["GET", "POST"],
+    credentials: true,
+    allowedHeaders: ["my-custom-header"],
+  },
+  transports: ['websocket', 'polling'] // Support both WebSocket and HTTP long-polling
 });
 
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Setup CORS headers for Express as well
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  next();
+});
+
 // Add specific route for the root path
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Also serve main.html directly
+app.get('/main', (req, res) => {
+  res.sendFile(path.join(__dirname, 'main.html'));
+});
+
+// Add status check endpoint for easy testing
+app.get('/status', (req, res) => {
+  res.json({
+    status: 'online',
+    message: 'Rock Paper Scissors server is running!',
+    time: new Date().toISOString()
+  });
 });
 
 // Game state

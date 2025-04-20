@@ -5,3 +5,9 @@
   from = "/*"
   to = "/main.html"
   status = 200
+  
+# Cache configuration for better performance
+[[headers]]
+  for = "/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000"

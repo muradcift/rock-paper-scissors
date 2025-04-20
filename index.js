@@ -100,17 +100,21 @@ function connectToServer() {
     updateConnectionStatus('connecting');
     
     try {
-        // Check if we're running on Netlify (purple theme version)
-        // and connect to the Render server instead
+        // Use configuration from config.js if available
         let serverUrl;
-        if (window.location.hostname.includes('netlify.app')) {
-            // Replace with your actual Render URL
-            serverUrl = 'https://rock-paper-scissors.onrender.com'; 
+        
+        if (typeof RPS_CONFIG !== 'undefined' && RPS_CONFIG.FORCE_SERVER_URL) {
+            // Use the configured server URL
+            serverUrl = RPS_CONFIG.SERVER_URL;
+        } else if (window.location.hostname.includes('netlify.app')) {
+            // Fallback for Netlify if config isn't available
+            serverUrl = 'https://rock-paper-scissors.onrender.com'; // Replace with actual URL
         } else {
             // For local development or when deployed on Render
             serverUrl = window.location.origin;
         }
         
+        console.log("Connecting to server:", serverUrl);
         socket = io(serverUrl);
         
         socket.on('connect', () => {
