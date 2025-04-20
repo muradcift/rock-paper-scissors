@@ -17,8 +17,8 @@ const io = socketIO(server, {
   transports: ['websocket', 'polling'] // Support both WebSocket and HTTP long-polling
 });
 
-// Serve static files
-app.use(express.static(path.join(__dirname, 'public')));
+// Serve root static files (main.html, index.js, config.js, style.css)
+app.use(express.static(path.join(__dirname)));
 
 // Setup CORS headers for Express as well
 app.use((req, res, next) => {
@@ -27,13 +27,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// Add specific route for the root path
+// Update root route to serve main.html instead of public/index.html
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// Also serve main.html directly
-app.get('/main', (req, res) => {
   res.sendFile(path.join(__dirname, 'main.html'));
 });
 

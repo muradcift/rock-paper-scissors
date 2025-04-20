@@ -83,61 +83,42 @@ function handleJoinGame() {
     setupMessage.textContent = "Connecting...";
     connectToServer();
     
-    // Wait for connection before joining
-    setTimeout(() => {
-        if (socket && socket.connected) {
-            socket.emit('setUsername', username);
-            socket.emit('joinGame', roomId);
-            currentRoomId = roomId;
-        } else {
-            setupMessage.textContent = "Connection failed. Please try again.";
-        }
-    }, 1000);
+    // Once connected, emit joinRoom event
+    socket.once('connect', () => {
+        socket.emit('joinRoom', { roomId, username });
+        currentRoomId = roomId;
+    });
 }
 
 // Connect to the Socket.io server
 function connectToServer() {
     updateConnectionStatus('connecting');
-    
     try {
-        // Use configuration from config.js if available
-        let serverUrl;
-        
-        if (typeof RPS_CONFIG !== 'undefined' && RPS_CONFIG.FORCE_SERVER_URL) {
-            // Use the configured server URL
-            serverUrl = RPS_CONFIG.SERVER_URL;
-        } else if (window.location.hostname.includes('netlify.app')) {
-            // Fallback for Netlify if config isn't available
-            serverUrl = 'https://rock-paper-scissors.onrender.com'; // Replace with actual URL
-        } else {
-            // For local development or when deployed on Render
-            serverUrl = window.location.origin;
-        }
-        
-        console.log("Connecting to server:", serverUrl);
-        socket = io(serverUrl);
-        
+        // Use configuration from config.js for server URL
+        console.log("Connecting to server:", RPS_CONFIG.SERVER_URL);
+        socket = io(RPS_CONFIG.SERVER_URL);
+
         socket.on('connect', () => {
             updateConnectionStatus('online');
-            
-            // Socket event handlers
-            socket.on('waiting', handleWaiting);
-            socket.on('gameStart', handleGameStart);
-            socket.on('usernameSet', handleUsernameSet);
-            socket.on('gameResult', handleGameResult);
-            socket.on('waitingForOpponent', () => {
-                gamePrompt.textContent = "Waiting for opponent's choice...";
-            });
-            socket.on('playerDisconnected', handlePlayerDisconnected);
-            socket.on('roomFull', () => {
-                setupMessage.textContent = "Room is full. Please try another room.";
-            });
-            socket.on('newRound', startNewRound);
-            socket.on('waitingForRematch', () => {
-                gamePrompt.textContent = "Waiting for opponent to play again...";
-            });
         });
-        
+
+        // Socket event handlers
+        socket.on('waiting', handleWaiting);
+        socket.on('gameStart', handleGameStart);
+        socket.on('usernameSet', handleUsernameSet);
+        socket.on('gameResult', handleGameResult);
+        socket.on('waitingForOpponent', () => {
+            gamePrompt.textContent = "Waiting for opponent's choice...";
+        });
+        socket.on('playerDisconnected', handlePlayerDisconnected);
+        socket.on('roomFull', () => {
+            setupMessage.textContent = "Room is full. Please try another room.";
+        });
+        socket.on('newRound', startNewRound);
+        socket.on('waitingForRematch', () => {
+            gamePrompt.textContent = "Waiting for opponent to play again...";
+        });
+
         socket.on('disconnect', () => {
             updateConnectionStatus('offline');
             if (isOnlineGame) {
@@ -145,7 +126,7 @@ function connectToServer() {
                 alert("Disconnected from server. Please reconnect.");
             }
         });
-        
+
         socket.on('connect_error', () => {
             updateConnectionStatus('offline');
             setupMessage.textContent = "Server connection error. Is the server running?";
@@ -169,6 +150,8 @@ function handleWaiting(data) {
 function handleGameStart(data) {
     waitingOverlay.classList.add('hidden');
     onlineInfo.classList.remove('hidden');
+    // Show game area
+    document.getElementById('gameArea').classList.remove('hidden');
     waitingForOpponent = false;
     isOnlineGame = true;
     
@@ -203,6 +186,8 @@ function handleUsernameSet(confirmedUsername) {
 // Start offline game
 function startOfflineGame() {
     gameSetupModal.style.display = "none";
+    // Show game area
+    document.getElementById('gameArea').classList.remove('hidden');
     isOnlineGame = false;
     onlineInfo.classList.add('hidden');
     
@@ -287,15 +272,12 @@ function handlePlayerDisconnected(data) {
 // Handle player's choice
 function handleChoice(choice) {
     if (isOnlineGame) {
-        // In online mode, send choice to server
-        if (waitingForOpponent || playerChoice) return;
-        
+        if (playerChoice) return;
         playerChoice = choice;
-        socket.emit('playerChoice', { roomID: currentRoomId, choice });
+        socket.emit('playerChoice', { room: currentRoomId, choice });
         
-        // Update player's display
-        updatePlayerDisplay(choice);
-        gamePrompt.textContent = "Waiting for opponent...";
+        // Show choice made state
+        gamePrompt.textContent = "Choice made. Waiting...";
     } else {
         // In offline mode, play against computer
         playGame(choice);

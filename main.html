@@ -10,8 +10,6 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-    <script src="config.js"></script>
-    <script src="https://cdn.socket.io/4.4.1/socket.io.min.js"></script>
 </head>
 <body>
     <div class="game-container">
@@ -59,7 +57,8 @@
             </div>
         </div>
 
-        <div class="game-area">
+        <!-- Game Container -->
+        <div id="gameArea" class="game-area hidden">
             <div id="onlineInfo" class="online-info hidden">
                 <div class="player-info">
                     <span>You: </span>
@@ -136,6 +135,9 @@
         </footer>
     </div>
 
+    <!-- Load config then socket.io from server -->
+    <script src="config.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
     <script src="index.js"></script>
 </body>
 </html>
