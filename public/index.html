@@ -311,7 +311,8 @@
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        const socket = io();
+        // Update socket connection to use the current origin
+        const socket = io(window.location.origin);
         
         // DOM elements
         const themeToggle = document.getElementById('theme-toggle');

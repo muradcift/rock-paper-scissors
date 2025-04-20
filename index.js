@@ -100,8 +100,8 @@ function connectToServer() {
     updateConnectionStatus('connecting');
     
     try {
-        // Replace the direct connection with the URL to your deployed server
-        socket = io("https://your-server-url.com"); // Use your actual server URL here
+        // Replace the hardcoded URL with the current origin
+        socket = io(window.location.origin);
         
         socket.on('connect', () => {
             updateConnectionStatus('online');
