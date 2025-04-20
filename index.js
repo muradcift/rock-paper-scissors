@@ -100,8 +100,18 @@ function connectToServer() {
     updateConnectionStatus('connecting');
     
     try {
-        // Replace the hardcoded URL with the current origin
-        socket = io(window.location.origin);
+        // Check if we're running on Netlify (purple theme version)
+        // and connect to the Render server instead
+        let serverUrl;
+        if (window.location.hostname.includes('netlify.app')) {
+            // Replace with your actual Render URL
+            serverUrl = 'https://rock-paper-scissors.onrender.com'; 
+        } else {
+            // For local development or when deployed on Render
+            serverUrl = window.location.origin;
+        }
+        
+        socket = io(serverUrl);
         
         socket.on('connect', () => {
             updateConnectionStatus('online');

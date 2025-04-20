@@ -5,7 +5,14 @@ const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIO(server);
+
+// Add CORS configuration
+const io = socketIO(server, {
+  cors: {
+    origin: "*", // In production, you might want to be more specific
+    methods: ["GET", "POST"]
+  }
+});
 
 // Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
