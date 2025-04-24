@@ -10,9 +10,7 @@ const server = http.createServer(app);
 const io = socketIO(server, {
   cors: {
     origin: "*", // Allow connections from any origin
-    methods: ["GET", "POST"],
-    credentials: true,
-    allowedHeaders: ["my-custom-header"],
+    methods: ["GET", "POST"]
   },
   transports: ['websocket', 'polling'] // Support both WebSocket and HTTP long-polling
 });
