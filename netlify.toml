@@ -1,5 +1,13 @@
 [build]
   publish = "./"
+  functions = "functions"
+  command = "npm install"
+  
+[dev]
+  framework = "#custom"
+  command = "npm run netlify-dev"
+  targetPort = 8888
+  port = 8080
   
 # Serve static files in public folder directly
 [[redirects]]
@@ -10,6 +18,11 @@
 [[redirects]]
   from = "/config.js"
   to = "/public/config.js"
+  status = 200
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/server/:splat"
   status = 200
 
 [[redirects]]
