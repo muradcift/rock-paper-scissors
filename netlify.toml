@@ -17,6 +17,7 @@
   to = "https://rock-paper-scissors.onrender.com/socket.io/:splat"
   status = 200
   force = true
+  methods = ["GET", "POST", "OPTIONS"]
 
 [[redirects]]
   from = "/*"

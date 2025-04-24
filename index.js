@@ -131,7 +131,7 @@ function connectToServer() {
             updateConnectionStatus('offline');
         }, 5000);
         
-        socket = io(serverUrl);
+        socket = io(serverUrl, { transports: ['polling'] });
 
         socket.on('connect', () => {
             clearTimeout(connectionTimeout);
