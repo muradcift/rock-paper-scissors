@@ -81,13 +81,32 @@ function handleJoinGame() {
     }
     
     setupMessage.textContent = "Connecting...";
+    
+    // Check if socket.io is loaded
+    if (typeof io === 'undefined') {
+        setupMessage.textContent = "Error: Socket.io not loaded. Please open via a server (http://localhost:3000)";
+        console.error("Socket.io not loaded. Running from file:// directly?");
+        return;
+    }
+    
     connectToServer();
     
-    // Once connected, emit joinRoom event
-    socket.once('connect', () => {
-        socket.emit('joinRoom', { roomId, username });
-        currentRoomId = roomId;
-    });
+    // Ensure connection before attempting to join room
+    if (socket) {
+        // If already connected, join directly
+        if (socket.connected) {
+            socket.emit('joinRoom', { roomId, username });
+            currentRoomId = roomId;
+        } else {
+            // Wait for connection before joining
+            socket.once('connect', () => {
+                socket.emit('joinRoom', { roomId, username });
+                currentRoomId = roomId;
+            });
+        }
+    } else {
+        setupMessage.textContent = "Failed to create socket connection";
+    }
 }
 
 // Connect to the Socket.io server
@@ -95,11 +114,28 @@ function connectToServer() {
     updateConnectionStatus('connecting');
     try {
         // Determine server URL (fall back to origin if config missing)
-        const serverUrl = (window.RPS_CONFIG && RPS_CONFIG.SERVER_URL) || window.location.origin;
+        const serverUrl = (window.RPS_CONFIG && window.RPS_CONFIG.SERVER_URL) || 
+                          (window.location.protocol === 'file:' ? 'http://localhost:3000' : window.location.origin);
+        
         console.log("Connecting to server:", serverUrl);
+        
+        // Clear any existing socket connection
+        if (socket) {
+            socket.disconnect();
+        }
+        
+        // Set connection timeout
+        const connectionTimeout = setTimeout(() => {
+            console.error("Connection timed out");
+            setupMessage.textContent = "Connection timed out. Server may be down.";
+            updateConnectionStatus('offline');
+        }, 5000);
+        
         socket = io(serverUrl);
 
         socket.on('connect', () => {
+            clearTimeout(connectionTimeout);
+            console.log("Connected to server with ID:", socket.id);
             updateConnectionStatus('online');
         });
 
@@ -119,19 +155,34 @@ function connectToServer() {
         socket.on('waitingForRematch', () => {
             gamePrompt.textContent = "Waiting for opponent to play again...";
         });
+        
+        // Handle game updates from server
+        socket.on('gameUpdate', (data) => {
+            console.log("Game update:", data.message);
+            setupMessage.textContent = data.message;
+        });
 
         socket.on('disconnect', () => {
             updateConnectionStatus('offline');
+            console.log("Disconnected from server");
             if (isOnlineGame) {
                 showGameSetup();
                 alert("Disconnected from server. Please reconnect.");
             }
         });
 
-        socket.on('connect_error', () => {
+        socket.on('connect_error', (error) => {
+            clearTimeout(connectionTimeout);
+            console.error("Connection error:", error);
             updateConnectionStatus('offline');
-            setupMessage.textContent = "Server connection error. Is the server running?";
+            setupMessage.textContent = "Server connection error: " + error.message;
         });
+        
+        socket.io.on("error", (error) => {
+            console.error("Transport error:", error);
+            setupMessage.textContent = "Connection transport error";
+        });
+        
     } catch (error) {
         console.error("Connection error:", error);
         updateConnectionStatus('offline');
@@ -149,34 +200,67 @@ function handleWaiting(data) {
 
 // Handle game start when opponent joins
 function handleGameStart(data) {
-    waitingOverlay.classList.add('hidden');
-    onlineInfo.classList.remove('hidden');
-    // Show game area
-    document.getElementById('gameArea').classList.remove('hidden');
-    waitingForOpponent = false;
-    isOnlineGame = true;
-    
-    // Find opponent
-    const players = data.players;
-    for (let player of players) {
-        if (player.id !== socket.id) {
-            opponentUsername = player.username;
-            opponentName.textContent = opponentUsername;
-            break;
+    console.log("Game start event received:", data);
+    try {
+        // Important: Hide the game setup modal first!
+        gameSetupModal.style.display = "none";
+        
+        // Hide waiting overlay and show online info
+        waitingOverlay.classList.add('hidden');
+        onlineInfo.classList.remove('hidden');
+        
+        // Show game area - most important part
+        const gameArea = document.getElementById('gameArea');
+        if (gameArea) {
+            console.log("Game area found, making it visible");
+            gameArea.classList.remove('hidden');
+            // Force-override style as well to ensure visibility
+            gameArea.style.display = "block";
+        } else {
+            console.error("Game area element not found!");
         }
+        
+        // Update game state
+        waitingForOpponent = false;
+        isOnlineGame = true;
+        
+        // Find opponent from player list
+        const players = data.players || [];
+        console.log("Players in room:", players);
+        
+        if (players.length === 2) {
+            for (let player of players) {
+                if (player.id !== socket.id) {
+                    opponentUsername = player.username || "Opponent";
+                    opponentName.textContent = opponentUsername;
+                    console.log("Found opponent:", opponentUsername);
+                    break;
+                }
+            }
+        } else {
+            console.warn("Expected 2 players but got:", players.length);
+        }
+        
+        // Update player info display
+        playerName.textContent = username;
+        currentRoom.textContent = data.roomID || currentRoomId;
+        
+        // Update UI for online game
+        playerScoreLabel.textContent = "You";
+        computerScoreLabel.textContent = "Opponent";
+        playerTitle.textContent = "You chose";
+        computerTitle.textContent = "Opponent chose";
+        
+        // Reset game state
+        resetGame();
+        
+        gamePrompt.textContent = "Make your choice";
+        
+        console.log("Game started successfully!");
+    } catch (error) {
+        console.error("Error in handleGameStart:", error);
+        alert("Error starting game: " + error.message);
     }
-    
-    playerName.textContent = username;
-    currentRoom.textContent = data.roomID;
-    
-    // Update UI for online game
-    playerScoreLabel.textContent = "You";
-    computerScoreLabel.textContent = "Opponent";
-    playerTitle.textContent = "You chose";
-    computerTitle.textContent = "Opponent chose";
-    resetGame();
-    
-    gamePrompt.textContent = "Make your choice";
 }
 
 // Handle username confirmation
@@ -327,49 +411,44 @@ function playGame(playerChoice) {
 
 // Handle game result in online mode
 function handleGameResult(data) {
-    const choices = data.choices;
-    const result = data.result;
-    const players = data.players;
-    
-    // Find opponent's ID
-    let opponentId;
-    for (let id in choices) {
-        if (id !== socket.id) {
-            opponentId = id;
-            break;
+    // Check if we have player data in expected format
+    if (data.player1 && data.player2) {
+        // Find which player is the current user and which is the opponent
+        const currentPlayer = data.player1.id === socket.id ? data.player1 : data.player2;
+        const opponentPlayer = data.player1.id === socket.id ? data.player2 : data.player1;
+        
+        // Update displays with player choices
+        updatePlayerDisplay(currentPlayer.choice);
+        updateOpponentDisplay(opponentPlayer.choice);
+        
+        // Update result text based on winner
+        let resultText;
+        if (!data.winner) {
+            resultText = "IT'S A TIE!";
+            resultDisplay.classList.remove("greenText", "redText");
+        } else if (data.winner === socket.id) {
+            resultText = "YOU WIN!";
+            resultDisplay.classList.remove("redText");
+            resultDisplay.classList.add("greenText");
+            playerScore++;
+            playerScoreDisplay.textContent = playerScore;
+        } else {
+            resultText = "YOU LOSE!";
+            resultDisplay.classList.remove("greenText");
+            resultDisplay.classList.add("redText");
+            computerScore++;
+            computerScoreDisplay.textContent = computerScore;
         }
-    }
-    
-    // Update displays
-    updatePlayerDisplay(choices[socket.id]);
-    updateOpponentDisplay(choices[opponentId]);
-    
-    // Update result text
-    let resultText;
-    if (result === 'tie') {
-        resultText = "IT'S A TIE!";
-        resultDisplay.classList.remove("greenText", "redText");
-    } else if (result === 'player1' && socket.id === players.player1.id ||
-               result === 'player2' && socket.id === players.player2.id) {
-        resultText = "YOU WIN!";
-        resultDisplay.classList.remove("redText");
-        resultDisplay.classList.add("greenText");
-        playerScore++;
-        playerScoreDisplay.textContent = playerScore;
+        
+        resultDisplay.textContent = resultText;
+        playerChoice = null;
+        gamePrompt.textContent = "Make your choice";
+        
+        // Enable play again
+        resetButton.disabled = false;
     } else {
-        resultText = "YOU LOSE!";
-        resultDisplay.classList.remove("greenText");
-        resultDisplay.classList.add("redText");
-        computerScore++;
-        computerScoreDisplay.textContent = computerScore;
+        console.error("Unexpected game result format:", data);
     }
-    
-    resultDisplay.textContent = resultText;
-    playerChoice = null;
-    gamePrompt.textContent = "Make your choice";
-    
-    // Enable play again
-    resetButton.disabled = false;
 }
 
 // Update player's display with choice

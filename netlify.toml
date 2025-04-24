@@ -8,6 +8,11 @@
   status = 200
 
 [[redirects]]
+  from = "/config.js"
+  to = "/public/config.js"
+  status = 200
+
+[[redirects]]
   from = "/*"
   to = "/main.html"
   status = 200

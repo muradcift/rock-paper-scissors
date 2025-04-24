@@ -20,6 +20,11 @@ const io = socketIO(server, {
 // Serve root static files (main.html, index.js, config.js, style.css)
 app.use(express.static(path.join(__dirname)));
 
+// Serve config.js directly at root path
+app.get('/config.js', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'config.js'));
+});
+
 // Setup CORS headers for Express as well
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
@@ -78,12 +83,22 @@ io.on('connection', (socket) => {
     
     // If room is full (2 players), notify both players
     if (rooms[roomId].playerCount === 1) {
+      socket.emit('waiting', { roomID: roomId });
       socket.emit('gameUpdate', { message: 'Waiting for an opponent to join...' });
     } else if (rooms[roomId].playerCount === 2) {
-      // Notify all players in the room
-      io.to(roomId).emit('gameUpdate', { message: 'Game is ready! Make your choice.' });
+      // Get array of players from the room
+      const playersArray = Object.values(rooms[roomId].players);
+      
+      // Send the gameStart event to trigger UI changes
+      io.to(roomId).emit('gameStart', { 
+        roomID: roomId,
+        players: playersArray 
+      });
+      
+      // io.to(roomId).emit('gameUpdate', { message: 'Game is ready! Make your choice.' });
     } else {
       // More than 2 players - notify that room is full
+      socket.emit('roomFull');
       socket.emit('gameUpdate', { message: 'Room is full, spectating only.' });
     }
     
