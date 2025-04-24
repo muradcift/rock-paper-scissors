@@ -4,9 +4,8 @@
     ? 'http://localhost:3000'
     : window.location.origin);
   const renderUrl = "https://rock-paper-scissors.onrender.com"; // Replace with your Render or backend URL
-  const staticHostPatterns = [/\.netlify\.app$/, /\.vercel\.app$/];
-  const isStaticHost = staticHostPatterns.some(pattern => pattern.test(window.location.hostname));
-  const SERVER_URL = isStaticHost ? renderUrl : defaultUrl;
+  // Always use the Render backend for web hosts, use defaultUrl only when running locally via file protocol
+  const SERVER_URL = (window.location.protocol === 'file:') ? defaultUrl : renderUrl;
   global.RPS_CONFIG = {
     SERVER_URL,
     VERSION: "1.0.0",

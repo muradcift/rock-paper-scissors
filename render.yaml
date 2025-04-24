@@ -1,18 +1,10 @@
 services:
-<<<<<<< HEAD
   - type: web
     name: rock-paper-scissors
-    runtime: static
-=======
-  - type: static_site
-    name: rock-paper-scissors
->>>>>>> cfa106c1321b874ccb1c9ce62e8bb35c5cc98011
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
     envVars:
       - key: NODE_VERSION
         value: 16
-    buildCommand: npm install && npm run build
-    staticPublishPath: ./dist
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
