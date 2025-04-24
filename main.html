@@ -135,16 +135,9 @@
         </footer>
     </div>
 
-    <!-- Load config then socket.io from server -->
+    <!-- Load game config and Socket.io client via CDN -->
     <script src="/config.js"></script>
-    <script>
-        (function() {
-            var s = document.createElement('script');
-            s.src = window.RPS_CONFIG.SERVER_URL + '/socket.io/socket.io.js';
-            s.async = false;
-            document.head.appendChild(s);
-        })();
-    </script>
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
     <script src="/index.js"></script>
 </body>
 </html>
