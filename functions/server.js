@@ -5,6 +5,7 @@ const path = require('path');
 const serverless = require('serverless-http');
 
 const app = express();
+const router = express.Router();
 
 // Enhanced CORS configuration for broader compatibility
 app.use((req, res, next) => {
@@ -38,22 +39,66 @@ app.get('/status', (req, res) => {
 // Oyun durumu
 const rooms = {};
 
-// Bu bölüm sadece Netlify Dev çalıştırırken çalışacak
-// Netlify Functions ortamında çalışmayacak
-if (process.env.NETLIFY_DEV) {
-  // Yerel geliştirme için HTTP sunucusu oluştur
-  const server = http.createServer(app);
+// Helper function to handle player leaving
+function handlePlayerLeaving(socket, roomId, io) {
+  if (rooms[roomId] && rooms[roomId].players && rooms[roomId].players[socket.id]) {
+    const username = rooms[roomId].players[socket.id].username;
+    
+    delete rooms[roomId].players[socket.id];
+    rooms[roomId].playerCount--;
+    
+    // Notify other players in the room
+    socket.to(roomId).emit('gameUpdate', { message: `${username} has left the game.` });
+    
+    // Clean up empty rooms
+    if (rooms[roomId].playerCount === 0) {
+      delete rooms[roomId];
+    }
+    
+    // Leave the socket.io room
+    socket.leave(roomId);
+  }
+}
 
-  // Socket.io kurulumu
+// Function to determine the winner
+function determineWinner(player1, player2) {
+  const choice1 = player1.choice;
+  const choice2 = player2.choice;
+  
+  if (choice1 === choice2) {
+    return {
+      message: "It's a tie!",
+      winnerId: null
+    };
+  }
+  
+  if (
+    (choice1 === 'rock' && choice2 === 'scissors') ||
+    (choice1 === 'paper' && choice2 === 'rock') ||
+    (choice1 === 'scissors' && choice2 === 'paper')
+  ) {
+    return {
+      message: `${player1.username} wins with ${choice1} against ${choice2}!`,
+      winnerId: player1.id
+    };
+  } else {
+    return {
+      message: `${player2.username} wins with ${choice2} against ${choice1}!`,
+      winnerId: player2.id
+    };
+  }
+}
+
+// Serverless function için Socket.IO setup
+function setupSocketIO(server) {
   const io = socketIO(server, {
     cors: {
       origin: "*", 
       methods: ["GET", "POST"]
     },
-    transports: ['websocket', 'polling']
+    transports: ['polling']  // Netlify Functions için sadece polling kullan
   });
 
-  // Socket.io bağlantı yönetimi
   io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
     
@@ -148,7 +193,7 @@ if (process.env.NETLIFY_DEV) {
     
     // Handle leaving room
     socket.on('leaveRoom', (roomId) => {
-      handlePlayerLeaving(socket, roomId);
+      handlePlayerLeaving(socket, roomId, io);
     });
     
     // Handle disconnect
@@ -157,60 +202,21 @@ if (process.env.NETLIFY_DEV) {
       
       // Remove player from all rooms they were in
       for (const roomId in rooms) {
-        handlePlayerLeaving(socket, roomId);
+        handlePlayerLeaving(socket, roomId, io);
       }
     });
   });
 
-  // Helper function to handle player leaving
-  function handlePlayerLeaving(socket, roomId) {
-    if (rooms[roomId] && rooms[roomId].players && rooms[roomId].players[socket.id]) {
-      const username = rooms[roomId].players[socket.id].username;
-      
-      delete rooms[roomId].players[socket.id];
-      rooms[roomId].playerCount--;
-      
-      // Notify other players in the room
-      socket.to(roomId).emit('gameUpdate', { message: `${username} has left the game.` });
-      
-      // Clean up empty rooms
-      if (rooms[roomId].playerCount === 0) {
-        delete rooms[roomId];
-      }
-      
-      // Leave the socket.io room
-      socket.leave(roomId);
-    }
-  }
+  return io;
+}
 
-  // Function to determine the winner
-  function determineWinner(player1, player2) {
-    const choice1 = player1.choice;
-    const choice2 = player2.choice;
-    
-    if (choice1 === choice2) {
-      return {
-        message: "It's a tie!",
-        winnerId: null
-      };
-    }
-    
-    if (
-      (choice1 === 'rock' && choice2 === 'scissors') ||
-      (choice1 === 'paper' && choice2 === 'rock') ||
-      (choice1 === 'scissors' && choice2 === 'paper')
-    ) {
-      return {
-        message: `${player1.username} wins with ${choice1} against ${choice2}!`,
-        winnerId: player1.id
-      };
-    } else {
-      return {
-        message: `${player2.username} wins with ${choice2} against ${choice1}!`,
-        winnerId: player2.id
-      };
-    }
-  }
+// Bu bölüm sadece Netlify Dev çalıştırırken çalışacak
+if (process.env.NETLIFY_DEV) {
+  // Yerel geliştirme için HTTP sunucusu oluştur
+  const server = http.createServer(app);
+  
+  // Socket.IO kurulumu
+  setupSocketIO(server);
 
   // Yerel geliştirme için sunucuyu başlat
   const PORT = process.env.PORT || 8888;
@@ -219,5 +225,28 @@ if (process.env.NETLIFY_DEV) {
   });
 }
 
+// Socket.io için özel endpoint - AWS Lambda / Netlify Functions uyumlu
+app.post('/socket.io', (req, res) => {
+  res.set('Content-Type', 'application/javascript');
+  res.send('ok');
+});
+
+// Socket.io adresini ayarla
+app.use('/.netlify/functions/server/socket.io', (req, res) => {
+  res.set('Content-Type', 'application/javascript');
+  res.send('io connection');
+});
+
+// Serverless handler
+const handler = serverless(app);
+
 // Export the serverless handler
-module.exports.handler = serverless(app);
+module.exports.handler = async (event, context) => {
+  // Soket.io için özel işleme
+  if (event.path.includes('/socket.io')) {
+    console.log('Socket.IO request:', event.path);
+  }
+  
+  // Normal serverless işleyici
+  return await handler(event, context);
+};

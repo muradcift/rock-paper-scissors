@@ -25,9 +25,10 @@
   to = "/.netlify/functions/server/:splat"
   status = 200
 
+# Socket.io isteklerini kendi serverless fonksiyonumuza yönlendirme
 [[redirects]]
   from = "/socket.io/*"
-  to = "https://rock-paper-scissors.onrender.com/socket.io/:splat"
+  to = "/.netlify/functions/server/socket.io/:splat"
   status = 200
   force = true
   methods = ["GET", "POST", "OPTIONS"]

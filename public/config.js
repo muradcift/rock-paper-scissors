@@ -3,12 +3,14 @@
   const defaultUrl = (window.location.protocol === 'file:'
     ? 'http://localhost:3000'
     : window.location.origin);
-  // Choose server URL: localhost for file protocol, otherwise proxy via current origin (Netlify)
-  const SERVER_URL = window.location.protocol === 'file:'
+  
+  // Netlify Functions için socket.io endpoint yolu
+  const socketEndpoint = window.location.protocol === 'file:'
     ? defaultUrl
-    : window.location.origin;
+    : `${window.location.origin}/.netlify/functions/server`;
+  
   global.RPS_CONFIG = {
-    SERVER_URL,
+    SERVER_URL: socketEndpoint,
     VERSION: "1.0.0",
     THEME: "purple"
   };
