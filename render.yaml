@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: rock-paper-scissors
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_VERSION
+        value: 16
